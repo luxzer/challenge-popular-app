@@ -1,0 +1,108 @@
+import Link from "next/link";
+import { AppHeader } from "@/components/AppHeader";
+import { ExpenseBreakdown } from "@/components/ExpenseBreakdown";
+import { Card, Pill, ScoreGauge, money } from "@/components/ui";
+import { ACTIONS, CARDS } from "@/lib/data";
+import { getFinancialHealthSummary } from "@/lib/score";
+
+export default function ResumenPage() {
+  const summary = getFinancialHealthSummary();
+  const topAction = ACTIONS[0];
+  const topCard = CARDS[0];
+
+  return (
+    <div className="pb-8">
+      <AppHeader title="Salud Financiera" subtitle="Actualizado hoy, 10:36 a.m." backHref="/">
+        <div className="mt-4">
+          <h2 className="text-2xl font-bold text-white">Hola, {summary.userFirstName}</h2>
+          <p className="mt-1 text-sm text-white/85">Tu diagnóstico al {summary.asOfDate}</p>
+        </div>
+      </AppHeader>
+
+      <div className="-mt-8 space-y-4 px-5">
+        <Card>
+          <ScoreGauge score={summary.score} max={summary.scoreMax} />
+          <div className="mt-1 flex justify-center">
+            <Pill tone="success">En mejora · +{summary.scoreDeltaMonth} pts este mes</Pill>
+          </div>
+
+          <div className="mt-5 grid grid-cols-3 divide-x divide-divider border-t border-divider pt-4 text-center">
+            <div>
+              <p className="text-lg font-bold text-ink">{summary.onTimePaymentsPct}%</p>
+              <p className="text-xs text-muted">Pagos a tiempo</p>
+            </div>
+            <div>
+              <p className="text-lg font-bold text-ink">{summary.creditUtilizationPct}%</p>
+              <p className="text-xs text-muted">Uso del crédito</p>
+            </div>
+            <div>
+              <p className="text-lg font-bold text-brand-orange">{summary.savingsRatePct}%</p>
+              <p className="text-xs text-muted">Tasa de ahorro</p>
+            </div>
+          </div>
+
+          <Link
+            href="/salud-financiera/score"
+            className="mt-4 block text-center text-[15px] font-bold text-brand-orange"
+          >
+            Ver cómo se calcula ›
+          </Link>
+        </Card>
+
+        <ExpenseBreakdown />
+
+        <Card>
+          <div className="flex items-baseline justify-between">
+            <h2 className="text-[17px] font-bold text-ink">Para ti</h2>
+            <Link href="/salud-financiera/recomendaciones" className="text-sm font-bold text-brand-orange">
+              Ver todas ›
+            </Link>
+          </div>
+
+          <div className="mt-3 divide-y divide-divider">
+            <div className="flex items-center gap-3 py-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-page text-ink">
+                ↑
+              </span>
+              <span className="flex-1 text-[15px] text-ink">{topAction.title}</span>
+              <span className="text-sm font-bold text-success">+{topAction.scoreImpactPts} pts</span>
+            </div>
+            <div className="flex items-center gap-3 py-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-warning-bg text-warning">
+                %
+              </span>
+              <span className="flex-1 text-[15px] text-ink">
+                Una tarjeta con 5% en comida rápida se ajusta a tu consumo
+              </span>
+              <span className="text-sm font-bold text-success">{money(topCard.estimatedAnnualSavings)}</span>
+            </div>
+          </div>
+        </Card>
+
+        <Link
+          href="/salud-financiera/aliado"
+          className="flex items-center gap-3 rounded-3xl px-5 py-4 text-white"
+          style={{ background: "linear-gradient(160deg, var(--brand-navy-deep) 0%, var(--brand-blue) 100%)" }}
+        >
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/15">
+            <PieIcon />
+          </span>
+          <span className="flex-1">
+            <span className="block text-[16px] font-bold">Pregúntale a Aliado</span>
+            <span className="block text-sm text-white/80">Responde con tus propios datos, no con estimados</span>
+          </span>
+          <span className="text-brand-orange text-xl">›</span>
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function PieIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="9" stroke="white" strokeWidth="1.8" />
+      <path d="M12 12V3a9 9 0 0 1 9 9Z" fill="white" />
+    </svg>
+  );
+}
