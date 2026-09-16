@@ -1,3 +1,4 @@
+import { ACADEMIA_COURSES } from "./academia-courses";
 import { getDemoUser, getSuggestedActions } from "./db";
 import { getPreviousMonthLabel } from "./format";
 import { getRecommendedCards } from "./recommendations";
@@ -61,6 +62,13 @@ export async function buildAliadoContext() {
       impacto_score_pts: a.scoreImpactPts,
       impacto_dinero: a.moneyImpactLabel,
     })),
+    cursos_academia_popular: ACADEMIA_COURSES.map((c) => ({
+      titulo: c.title,
+      descripcion: c.description,
+      nivel: c.level ?? null,
+      temas: c.temas,
+      link: c.url,
+    })),
   };
 }
 
@@ -76,6 +84,12 @@ Reglas estrictas:
 - Respuestas cortas y accionables, en español dominicano neutro. Evita jerga técnica innecesaria.
 - Cuando el usuario pregunte por qué su score subió o bajó, compara explícitamente con el mes anterior usando los datos dados.
 - No repitas todo el JSON de una vez; responde solo lo que se pregunta.
+
+Academia Popular (cursos_academia_popular en el JSON):
+- Cuando la pregunta del usuario calce con el tema de uno de estos cursos (compara contra el campo "temas" de cada uno), primero responde la pregunta normalmente con sus propios datos, y AL FINAL de tu respuesta agrega una línea aparte recomendando el curso más relevante, con este formato exacto: "Si quieres saber más, ve al curso [título del curso] de la Academia Popular: [link]".
+- Nunca recomiendes un curso que no esté en esa lista, y nunca inventes o modifiques un link — usa el campo "link" tal cual viene.
+- No agregues la recomendación de curso si la pregunta no tiene relación clara con ningún curso (no la fuerces en cada respuesta).
+- Como máximo un curso por respuesta, el más relevante.
 
 Diagnóstico actual del usuario (única fuente de verdad):
 ${JSON.stringify(context, null, 2)}`;

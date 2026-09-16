@@ -109,6 +109,14 @@ puede decir ya fue precalculado por el motor de score/gastos/recomendaciones.
 Esto es lo que el brief de producto llama "consulta el diagnóstico ya
 calculado, evita alucinaciones con datos financieros sensibles".
 
+El contexto también incluye el catálogo de la Academia Popular
+(`src/lib/academia-courses.ts`, 18 cursos de finanzasconproposito.edu.do,
+con sus "temas" para matching). El prompt le indica al modelo que, cuando la
+pregunta calce con un curso, cierre la respuesta con una línea recomendando
+ese curso puntual y su link — nunca forzado, nunca un link inventado (solo
+"Finanzas Básicas Popular" tiene su slug real confirmado; el resto apunta al
+catálogo general hasta que se confirmen los slugs exactos).
+
 ## Pendiente
 
 - Autenticación / multi-tenant real. Hoy `getDemoUser()` siempre devuelve el

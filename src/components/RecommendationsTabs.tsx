@@ -135,9 +135,6 @@ export function RecommendationsTabs({
 
             <Card>
               <h3 className="text-[16px] font-bold text-ink">Otras tarjetas Popular</h3>
-              <p className="mt-1 text-sm text-muted">
-                No se ajustan tanto a tu consumo actual, pero están disponibles si buscas otro beneficio.
-              </p>
               <div className="mt-2 divide-y divide-divider">
                 {otherCards.map((card) => (
                   <div key={card.id} className="flex items-center gap-3 py-3">
@@ -156,15 +153,11 @@ export function RecommendationsTabs({
                         Costo anual {card.annualCost} · Ingreso mínimo {card.minIncome}
                       </p>
                     </div>
-                    <span
-                      className={`text-xs font-semibold ${
-                        card.estimatedAnnualSavings >= 0 ? "text-success" : "text-muted"
-                      }`}
-                    >
-                      {card.estimatedAnnualSavings >= 0
-                        ? `${money(card.estimatedAnnualSavings)} / año`
-                        : "Sin ahorro extra"}
-                    </span>
+                    {card.estimatedAnnualSavings >= 0 ? (
+                      <span className="text-xs font-semibold text-success">
+                        {money(card.estimatedAnnualSavings)} / año
+                      </span>
+                    ) : null}
                   </div>
                 ))}
               </div>
