@@ -35,7 +35,9 @@ export function RecommendationsTabs({
   const [filter, setFilter] = useState<FilterId>("todas");
 
   const showCards = filter === "todas" || filter === "tarjetas";
-  const showActions = filter === "todas" || actions.some((a) => a.category === filter);
+  const filteredActions = actions.filter((a) => filter === "todas" || a.category === filter);
+  const showActions = filter === "todas" || filteredActions.length > 0;
+  const isEmpty = !showCards && filteredActions.length === 0;
 
   return (
     <div>
@@ -165,8 +167,14 @@ export function RecommendationsTabs({
           </>
         ) : null}
 
+        {isEmpty ? (
+          <div className="rounded-3xl bg-page px-5 py-8 text-center text-sm text-muted">
+            Muy pronto vas a poder ver recomendaciones de {filter} aquí.
+          </div>
+        ) : null}
+
         {showActions
-          ? actions.filter((a) => filter === "todas" || a.category === filter).map((action) => (
+          ? filteredActions.map((action) => (
               <Card key={action.id}>
                 <div className="flex gap-3">
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-page text-ink">

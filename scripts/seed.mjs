@@ -70,34 +70,9 @@ const TRANSACTIONS = [
   { id: "t16", merchant: "GYM FITNESS CLUB", occurred_on: "2026-08-06", amount: 686.0, category_id: "servicios" },
 ];
 
-const ACTIONS = [
-  {
-    id: "auto-ahorro",
-    title: "Automatiza RD$1,500 al mes a tu cuenta de ahorro",
-    detail:
-      "El día 30 te queda saldo sin usar en la cuenta 830842753. Programarlo antes de gastarlo es lo que más mueve tu score hoy.",
-    score_impact_pts: 15,
-    money_impact_label: "RD$18,000 al año",
-    primary_cta: "Activar transferencia",
-    secondary_cta: "No me aplica",
-    direction: "up",
-    category: "ahorro",
-    sort_order: 1,
-  },
-  {
-    id: "abono-tarjeta",
-    title: "Abona RD$4,200 antes del 09 sept",
-    detail:
-      "Tu tarjeta ****1122 cierra el 09 de septiembre. Abonar antes del corte reduce tu uso de crédito reportado y te ahorra intereses.",
-    score_impact_pts: 9,
-    money_impact_label: "RD$480 ahorrados",
-    primary_cta: "Programar abono",
-    secondary_cta: "No me aplica",
-    direction: "down",
-    category: "deuda",
-    sort_order: 2,
-  },
-];
+// Acciones sugeridas: pendientes para una próxima fase (por ahora sin
+// contenido real que mostrar, ver docs/PRODUCT.md "ciclo de mejora").
+const ACTIONS = [];
 
 const CARDS = [
   {
@@ -154,23 +129,6 @@ const CARDS = [
     ],
   },
   {
-    id: "clasica-visa",
-    name: "Clásica Visa",
-    issuer: "Popular",
-    network: "Visa",
-    badge: "estandar",
-    badge_label: "Estándar — Comparador de tarjetas EfiCredit",
-    estimated_annual_savings: -233.58,
-    annual_cost: "DOP$1,450.00",
-    min_income: "DOP$25,000.00",
-    redemption: "Ver en el website",
-    perks: ["Asistencia global", "Skybox gratis durante 12 meses", "Protección de precio", "Protección de compra"],
-    image_path: "/cards/clasica-visa-mastercard.png",
-    match_category_ids: [],
-    sort_order: 3,
-    cashback: [{ label: "Programa de recompensa", limit_label: "Sin límite", estimated_savings_label: "DOP$1,216.42" }],
-  },
-  {
     id: "clasica-mastercard",
     name: "Clásica Mastercard",
     issuer: "Popular",
@@ -184,46 +142,7 @@ const CARDS = [
     perks: ["Asistencia global", "Protección de compra"],
     image_path: "/cards/clasica-visa-mastercard.png",
     match_category_ids: [],
-    sort_order: 4,
-    cashback: [{ label: "Programa de recompensa", limit_label: "Sin límite", estimated_savings_label: "DOP$1,216.42" }],
-  },
-  {
-    id: "clasica-intl-visa",
-    name: "Clásica Internacional Visa",
-    issuer: "Popular",
-    network: "Visa",
-    badge: "estandar",
-    badge_label: "Estándar — Comparador de tarjetas EfiCredit",
-    estimated_annual_savings: -263.33,
-    annual_cost: "USD$25.00",
-    min_income: "DOP$20,000.00",
-    redemption: "Ver en el website",
-    perks: [
-      "Centro de atención al cliente Visa digital y teléfono",
-      "Portal de beneficios Visa",
-      "Protección de precios",
-      "SkyBox durante 12 meses",
-    ],
-    image_path: "/cards/clasica-visa-mastercard.png",
-    match_category_ids: [],
-    sort_order: 5,
-    cashback: [{ label: "Programa de recompensa", limit_label: "Sin límite", estimated_savings_label: "DOP$1,216.42" }],
-  },
-  {
-    id: "clasica-intl-mastercard",
-    name: "Clásica Internacional Mastercard",
-    issuer: "Popular",
-    network: "Mastercard",
-    badge: "estandar",
-    badge_label: "Estándar — Comparador de tarjetas EfiCredit",
-    estimated_annual_savings: -263.33,
-    annual_cost: "USD$25.00",
-    min_income: "DOP$20,000.00",
-    redemption: "Ver en el website",
-    perks: ["Mastercard Global Service", "Protección de compras", "Garantía extendida"],
-    image_path: "/cards/clasica-visa-mastercard.png",
-    match_category_ids: [],
-    sort_order: 6,
+    sort_order: 3,
     cashback: [{ label: "Programa de recompensa", limit_label: "Sin límite", estimated_savings_label: "DOP$1,216.42" }],
   },
   {
@@ -248,7 +167,7 @@ const CARDS = [
     ],
     image_path: "/cards/gold-visa-mastercard.png",
     match_category_ids: [],
-    sort_order: 7,
+    sort_order: 4,
     cashback: [{ label: "Programa de recompensa", limit_label: "Sin límite", estimated_savings_label: "DOP$1,216.42" }],
   },
   {
@@ -265,7 +184,7 @@ const CARDS = [
     perks: ["Mastercard Global Service", "Protección de compras", "Garantía extendida"],
     image_path: "/cards/gold-visa-mastercard.png",
     match_category_ids: [],
-    sort_order: 8,
+    sort_order: 5,
     cashback: [{ label: "Programa de recompensa", limit_label: "Sin límite", estimated_savings_label: "DOP$1,216.42" }],
   },
   {
@@ -289,7 +208,7 @@ const CARDS = [
     ],
     image_path: "/cards/ikea-family.png",
     match_category_ids: [],
-    sort_order: 9,
+    sort_order: 6,
     cashback: [{ label: "Ikea (5%)", limit_label: "Sin límite", estimated_savings_label: "A calcular" }],
   },
   {
@@ -304,9 +223,9 @@ const CARDS = [
     min_income: "No identificado",
     redemption: "No aplica",
     perks: ["Protección de compras", "MasterGlobal Service", "Priceless Specials Surprises"],
-    image_path: "/cards/clasica-visa-mastercard.png",
+    image_path: "/cards/iberia.png",
     match_category_ids: [],
-    sort_order: 10,
+    sort_order: 7,
     cashback: [{ label: "Almacenes Iberia (5%)", limit_label: "Sin límite", estimated_savings_label: "A calcular" }],
   },
 ];
@@ -385,6 +304,7 @@ async function main() {
 }
 
 async function upsert(table, rows) {
+  if (rows.length === 0) return;
   const { error } = await supabase.from(table).upsert(rows);
   if (error) throw new Error(`upsert ${table}: ${error.message}`);
 }

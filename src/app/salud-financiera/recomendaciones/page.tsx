@@ -16,7 +16,11 @@ export default async function RecomendacionesPage() {
     <div className="pb-4">
       <AppHeader
         title="Recomendaciones"
-        subtitle={`${topCards.length} tarjetas y ${actions.length} acciones para ti`}
+        subtitle={
+          actions.length > 0
+            ? `${topCards.length} tarjetas y ${actions.length} acciones para ti`
+            : `${topCards.length} tarjetas para ti`
+        }
       />
       <RecommendationsTabs topCards={topCards} otherCards={otherCards} actions={actions} />
     </div>
