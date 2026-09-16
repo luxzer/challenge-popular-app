@@ -15,10 +15,3 @@ export function getMonthLabel(isoDate: string): string {
   const name = MESES[month - 1];
   return name.charAt(0).toUpperCase() + name.slice(1);
 }
-
-/** "2026-08-27" -> "julio" */
-export function getPreviousMonthLabel(isoDate: string): string {
-  const month = Number(isoDate.split("-")[1]);
-  const prevIndex = (month - 2 + 12) % 12;
-  return MESES[prevIndex];
-}

@@ -7,7 +7,8 @@ import {
   getTransactions,
 } from "./db";
 import { formatAsOfDate } from "./format";
-import { FinancialHealthSummary, ScoreFactor, ScoreFactorStatus, Transaction } from "./types";
+import { getActiveProfileId } from "./profile";
+import { CategoryBreakdownItem, FinancialHealthSummary, ScoreFactor, ScoreFactorStatus, Transaction } from "./types";
 
 function utilizationToScore(pct: number): number {
   if (pct <= 10) return 90;
@@ -36,11 +37,16 @@ const SCORE_MIN = 300;
 const SCORE_MAX = 850;
 export const SCORE_MAX_VALUE = SCORE_MAX;
 
+async function loadUserAndProfile() {
+  const [user, profileId] = await Promise.all([getDemoUser(), getActiveProfileId()]);
+  return { user, profileId };
+}
+
 export async function getTotalGastos(): Promise<number> {
-  const user = await getDemoUser();
-  const signals = await getAccountSignals(user.id);
-  const totals = await getCategoryTotals(user.id, signals.asOfDate);
-  return Object.values(totals).reduce((a, b) => a + b, 0);
+  const { user, profileId } = await loadUserAndProfile();
+  const signals = await getAccountSignals(user.id, profileId);
+  const totals = await getCategoryTotals(user.id, profileId, signals.asOfDate);
+  return Object.values(totals).reduce((sum, t) => sum + t.amount, 0);
 }
 
 export function getSavingsRatePctFrom(monthlyIncome: number, gastos: number): number {
@@ -49,8 +55,8 @@ export function getSavingsRatePctFrom(monthlyIncome: number, gastos: number): nu
 }
 
 export async function computeScoreFactors(): Promise<ScoreFactor[]> {
-  const user = await getDemoUser();
-  const signals = await getAccountSignals(user.id);
+  const { user, profileId } = await loadUserAndProfile();
+  const signals = await getAccountSignals(user.id, profileId);
   const totalGastos = await getTotalGastos();
   const savingsRatePct = getSavingsRatePctFrom(signals.monthlyIncome, totalGastos);
 
@@ -67,7 +73,7 @@ export async function computeScoreFactors(): Promise<ScoreFactor[]> {
       weightPct: FACTOR_WEIGHTS.historial_pagos,
       status: statusForScore(historialScore),
       fillPct: historialScore,
-      detail: `${signals.onTimePayments} de ${signals.totalPayments} pagos a tiempo en los últimos 12 meses, incluyendo tu tarjeta ****1122 y tus servicios domiciliados. Es tu factor más fuerte.`,
+      detail: `${signals.onTimePayments} de ${signals.totalPayments} pagos a tiempo en los últimos 12 meses, incluyendo tu tarjeta ****1122 y tus servicios domiciliados.`,
     },
     {
       id: "uso_credito",
@@ -91,7 +97,7 @@ export async function computeScoreFactors(): Promise<ScoreFactor[]> {
       weightPct: FACTOR_WEIGHTS.capacidad_ahorro,
       status: statusForScore(ahorroScore),
       fillPct: ahorroScore,
-      detail: `Este mes ahorraste ${savingsRatePct}% de lo que entró a tus cuentas. Es tu factor con más espacio para mejorar.`,
+      detail: `Este mes ahorraste ${savingsRatePct}% de lo que entró a tus cuentas.`,
     },
     {
       id: "diversidad_productos",
@@ -111,8 +117,8 @@ export function computeOverallScore(factors: ScoreFactor[]): number {
 }
 
 export async function getFinancialHealthSummary(): Promise<FinancialHealthSummary> {
-  const user = await getDemoUser();
-  const signals = await getAccountSignals(user.id);
+  const { user, profileId } = await loadUserAndProfile();
+  const signals = await getAccountSignals(user.id, profileId);
   const factors = await computeScoreFactors();
   const score = computeOverallScore(factors);
   const totalGastos = await getTotalGastos();
@@ -131,24 +137,31 @@ export async function getFinancialHealthSummary(): Promise<FinancialHealthSummar
   };
 }
 
-export async function getCategoryBreakdown() {
-  const user = await getDemoUser();
-  const signals = await getAccountSignals(user.id);
+export async function getCategoryBreakdown(): Promise<CategoryBreakdownItem[]> {
+  const { user, profileId } = await loadUserAndProfile();
+  const signals = await getAccountSignals(user.id, profileId);
   const [categories, totals] = await Promise.all([
     getCategories(),
-    getCategoryTotals(user.id, signals.asOfDate),
+    getCategoryTotals(user.id, profileId, signals.asOfDate),
   ]);
-  const total = Object.values(totals).reduce((a, b) => a + b, 0);
+  const total = Object.values(totals).reduce((sum, t) => sum + t.amount, 0);
 
   return categories.map((category) => {
-    const amount = totals[category.id] ?? 0;
-    return { category, amount, pct: Math.round((amount / total) * 100) };
+    const t = totals[category.id];
+    const amount = t?.amount ?? 0;
+    return {
+      category,
+      amount,
+      pct: Math.round((amount / total) * 100),
+      insight: t?.insight ?? undefined,
+      insightTone: (t?.insightTone as CategoryBreakdownItem["insightTone"]) ?? undefined,
+    };
   });
 }
 
 export async function getTransactionsForCategory(categoryId: string): Promise<Transaction[]> {
-  const user = await getDemoUser();
-  const all = await getTransactions(user.id);
+  const { user, profileId } = await loadUserAndProfile();
+  const all = await getTransactions(user.id, profileId);
   return all.filter((t) => t.categoryId === categoryId);
 }
 
@@ -159,15 +172,15 @@ export async function getTransactionsForCategory(categoryId: string): Promise<Tr
  * of silently showing a partial sum next to the real total.
  */
 export async function getCategoryRemainder(categoryId: string): Promise<{ count: number; amount: number } | null> {
-  const user = await getDemoUser();
-  const signals = await getAccountSignals(user.id);
+  const { user, profileId } = await loadUserAndProfile();
+  const signals = await getAccountSignals(user.id, profileId);
   const [totals, remainders, transactions] = await Promise.all([
-    getCategoryTotals(user.id, signals.asOfDate),
-    getCategoryRemainders(user.id, signals.asOfDate),
+    getCategoryTotals(user.id, profileId, signals.asOfDate),
+    getCategoryRemainders(user.id, profileId, signals.asOfDate),
     getTransactionsForCategory(categoryId),
   ]);
 
-  const total = totals[categoryId];
+  const total = totals[categoryId]?.amount;
   if (total === undefined) return null;
 
   const shownTotal = transactions.reduce((sum, t) => sum + t.amount, 0);

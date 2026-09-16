@@ -2,7 +2,7 @@ import Link from "next/link";
 import { AppHeader } from "@/components/AppHeader";
 import { CategoryDetail, ExpenseBreakdown } from "@/components/ExpenseBreakdown";
 import { LiveUpdatedLabel } from "@/components/LiveUpdatedLabel";
-import { Card, Pill, ScoreGauge, money } from "@/components/ui";
+import { Card, Pill, ScoreGauge, formatDelta, money, trendTone } from "@/components/ui";
 import { getDemoUser, getSuggestedActions } from "@/lib/db";
 import { getMonthLabel } from "@/lib/format";
 import { getRecommendedCards } from "@/lib/recommendations";
@@ -38,7 +38,7 @@ export default async function ResumenPage() {
       transactions,
       remainder,
       note:
-        b.category.id === "delivery"
+        b.category.id === "delivery" && b.insightTone === "danger"
           ? "Tres pedidos por semana en promedio. Con una tarjeta de 5% en comida rápida recuperarías RD$459 de este mes."
           : undefined,
     };
@@ -58,7 +58,9 @@ export default async function ResumenPage() {
           <h2 className="text-[17px] font-bold text-ink">Tu resumen</h2>
           <ScoreGauge score={summary.score} max={summary.scoreMax} />
           <div className="mt-2 flex justify-center">
-            <Pill tone="success">En mejora · +{summary.scoreDeltaMonth} pts este mes</Pill>
+            <Pill tone={trendTone(summary.scoreTrend)}>
+              {summary.scoreTrend} · {formatDelta(summary.scoreDeltaMonth)} pts este mes
+            </Pill>
           </div>
 
           <div className="mt-6 grid grid-cols-3 divide-x divide-divider border-t border-divider pt-5 text-center">

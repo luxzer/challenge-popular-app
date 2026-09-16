@@ -12,10 +12,11 @@ export type AccountSignals = {
   productsHeld: number;
   productsInUniverse: number;
   scoreDeltaMonth: number;
-  scoreTrend: "En mejora" | "Estable" | "En riesgo";
+  scoreTrend: "En mejora" | "Estable" | "Necesita atención";
 };
 
-/** Single-tenant demo: there is exactly one seeded user ("Luis"). */
+/** Single-tenant demo: there is exactly one seeded user ("John Doe"), shown
+ * through one of several demo profiles — see lib/profile.ts. */
 export const getDemoUser = cache(async () => {
   const supabase = getSupabaseServerClient();
   const { data, error } = await supabase.from("app_users").select("id, first_name").limit(1).single();
@@ -23,9 +24,14 @@ export const getDemoUser = cache(async () => {
   return { id: data.id as string, firstName: data.first_name as string };
 });
 
-export const getAccountSignals = cache(async (userId: string): Promise<AccountSignals> => {
+export const getAccountSignals = cache(async (userId: string, profileId: number): Promise<AccountSignals> => {
   const supabase = getSupabaseServerClient();
-  const { data, error } = await supabase.from("account_signals").select("*").eq("user_id", userId).single();
+  const { data, error } = await supabase
+    .from("account_signals")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("profile_id", profileId)
+    .single();
   if (error) throw new Error(`getAccountSignals: ${error.message}`);
   return {
     asOfDate: data.as_of_date,
@@ -49,8 +55,6 @@ export const getCategories = cache(async (): Promise<ExpenseCategory[]> => {
     id: c.id,
     name: c.name,
     colorVar: c.color_var,
-    insight: c.insight ?? undefined,
-    insightTone: c.insight_tone ?? undefined,
   }));
 });
 
@@ -58,23 +62,34 @@ function monthStart(isoDate: string) {
   return `${isoDate.slice(0, 7)}-01`;
 }
 
-export const getCategoryTotals = cache(async (userId: string, isoDate: string): Promise<Record<string, number>> => {
-  const supabase = getSupabaseServerClient();
-  const { data, error } = await supabase
-    .from("category_totals")
-    .select("category_id, amount")
-    .eq("user_id", userId)
-    .eq("month", monthStart(isoDate));
-  if (error) throw new Error(`getCategoryTotals: ${error.message}`);
-  return Object.fromEntries(data.map((r) => [r.category_id, Number(r.amount)]));
-});
+export type CategoryTotal = { amount: number; insight: string | null; insightTone: string | null };
 
-export const getTransactions = cache(async (userId: string): Promise<Transaction[]> => {
+export const getCategoryTotals = cache(
+  async (userId: string, profileId: number, isoDate: string): Promise<Record<string, CategoryTotal>> => {
+    const supabase = getSupabaseServerClient();
+    const { data, error } = await supabase
+      .from("category_totals")
+      .select("category_id, amount, insight, insight_tone")
+      .eq("user_id", userId)
+      .eq("profile_id", profileId)
+      .eq("month", monthStart(isoDate));
+    if (error) throw new Error(`getCategoryTotals: ${error.message}`);
+    return Object.fromEntries(
+      data.map((r) => [
+        r.category_id,
+        { amount: Number(r.amount), insight: r.insight, insightTone: r.insight_tone },
+      ])
+    );
+  }
+);
+
+export const getTransactions = cache(async (userId: string, profileId: number): Promise<Transaction[]> => {
   const supabase = getSupabaseServerClient();
   const { data, error } = await supabase
     .from("transactions")
     .select("*")
     .eq("user_id", userId)
+    .eq("profile_id", profileId)
     .order("occurred_on", { ascending: false });
   if (error) throw new Error(`getTransactions: ${error.message}`);
   return data.map((t) => ({
@@ -87,12 +102,13 @@ export const getTransactions = cache(async (userId: string): Promise<Transaction
 });
 
 export const getCategoryRemainders = cache(
-  async (userId: string, isoDate: string): Promise<Record<string, number>> => {
+  async (userId: string, profileId: number, isoDate: string): Promise<Record<string, number>> => {
     const supabase = getSupabaseServerClient();
     const { data, error } = await supabase
       .from("category_remainders")
       .select("category_id, extra_count")
       .eq("user_id", userId)
+      .eq("profile_id", profileId)
       .eq("month", monthStart(isoDate));
     if (error) throw new Error(`getCategoryRemainders: ${error.message}`);
     return Object.fromEntries(data.map((r) => [r.category_id, r.extra_count]));

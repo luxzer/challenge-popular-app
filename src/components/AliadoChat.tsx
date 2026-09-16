@@ -8,10 +8,17 @@ type ChatMessage = { role: "user" | "assistant"; content: string };
 const QUICK_REPLIES = ["¿En qué se me va el dinero?", "¿Cómo subo 50 puntos?", "¿Me conviene consolidar mi deuda?"];
 
 export function AliadoChat({ userFirstName, score, scoreDeltaMonth }: { userFirstName: string; score: number; scoreDeltaMonth: number }) {
+  const deltaClause =
+    scoreDeltaMonth > 0
+      ? ` y subió ${scoreDeltaMonth} puntos este mes`
+      : scoreDeltaMonth < 0
+        ? ` y bajó ${Math.abs(scoreDeltaMonth)} puntos este mes`
+        : ", sin cambios este mes";
+
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: "assistant",
-      content: `Hola ${userFirstName}. Tu score va en ${score} y subió ${scoreDeltaMonth} puntos este mes. ¿Qué quieres revisar?`,
+      content: `Hola ${userFirstName}. Tu score va en ${score}${deltaClause}. ¿Qué quieres revisar?`,
     },
   ]);
   const [input, setInput] = useState("");

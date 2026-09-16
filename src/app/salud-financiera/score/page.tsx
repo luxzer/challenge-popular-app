@@ -1,6 +1,6 @@
 import { AppHeader } from "@/components/AppHeader";
 import { Card, ProgressBar } from "@/components/ui";
-import { computeOverallScore, computeScoreFactors, SCORE_MAX_VALUE } from "@/lib/score";
+import { computeOverallScore, computeScoreFactors, getFinancialHealthSummary, SCORE_MAX_VALUE } from "@/lib/score";
 
 const STATUS_COLOR: Record<string, string> = {
   Excelente: "var(--success)",
@@ -19,12 +19,15 @@ const STATUS_TEXT: Record<string, string> = {
 export const dynamic = "force-dynamic";
 
 export default async function ScoreBreakdownPage() {
-  const factors = await computeScoreFactors();
+  const [factors, summary] = await Promise.all([computeScoreFactors(), getFinancialHealthSummary()]);
   const score = computeOverallScore(factors);
 
   return (
     <div className="pb-8">
-      <AppHeader title="Desglose del score" subtitle={`${score} de ${SCORE_MAX_VALUE} · En mejora`} />
+      <AppHeader
+        title="Desglose del score"
+        subtitle={`${score} de ${SCORE_MAX_VALUE} · ${summary.scoreTrend}`}
+      />
 
       <div className="mt-4 space-y-4 px-5">
         <Card className="flex items-center gap-4">
@@ -32,7 +35,7 @@ export default async function ScoreBreakdownPage() {
             {score}
           </div>
           <div>
-            <p className="text-[15px] font-bold text-ink">En mejora</p>
+            <p className="text-[15px] font-bold text-ink">{summary.scoreTrend}</p>
             <p className="text-sm text-muted">
               Cinco factores construyen tu score. Toca cualquiera para ver qué lo mueve.
             </p>

@@ -10,6 +10,12 @@ export type ExpenseCategory = {
   id: string;
   name: string;
   colorVar: string; // css color token used for legend swatch + bar segment
+};
+
+export type CategoryBreakdownItem = {
+  category: ExpenseCategory;
+  amount: number;
+  pct: number;
   insight?: string;
   insightTone?: "danger" | "success" | "warning" | "neutral";
 };
@@ -39,7 +45,7 @@ export type FinancialHealthSummary = {
   score: number;
   scoreMax: number;
   scoreDeltaMonth: number;
-  scoreTrend: "En mejora" | "Estable" | "En riesgo";
+  scoreTrend: "En mejora" | "Estable" | "Necesita atención";
   onTimePaymentsPct: number;
   creditUtilizationPct: number;
   savingsRatePct: number;

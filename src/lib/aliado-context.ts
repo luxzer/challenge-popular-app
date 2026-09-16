@@ -1,6 +1,5 @@
 import { ACADEMIA_COURSES } from "./academia-courses";
 import { getDemoUser, getSuggestedActions } from "./db";
-import { getPreviousMonthLabel } from "./format";
 import { getRecommendedCards } from "./recommendations";
 import { computeOverallScore, computeScoreFactors, getCategoryBreakdown, getFinancialHealthSummary } from "./score";
 
@@ -40,14 +39,12 @@ export async function buildAliadoContext() {
       pagos_a_tiempo_pct: summary.onTimePaymentsPct,
       uso_credito_pct: summary.creditUtilizationPct,
       tasa_ahorro_pct: summary.savingsRatePct,
-      tasa_ahorro_mes_anterior_pct: 14,
-      mes_anterior: getPreviousMonthLabel(summary.asOfDateIso),
     },
     gastos_mes_actual: gastos.map((g) => ({
       categoria: g.category.name,
       monto: g.amount,
       pct_del_total: g.pct,
-      nota: g.category.insight ?? null,
+      nota: g.insight ?? null,
     })),
     tarjetas_recomendadas: topCards.map((c) => ({
       nombre: c.name,
@@ -82,7 +79,7 @@ Reglas estrictas:
 - Si te preguntan algo que no se puede responder con estos datos (ej. estimados de mercado, tasas de otras instituciones, consejos legales), dilo con honestidad: no tienes esa información y sugiere revisar la sección correspondiente del módulo o hablar con un asesor.
 - Tono: empático, claro, nunca punitivo. Nunca hagas sentir mal al usuario por su situación financiera.
 - Respuestas cortas y accionables, en español dominicano neutro. Evita jerga técnica innecesaria.
-- Cuando el usuario pregunte por qué su score subió o bajó, compara explícitamente con el mes anterior usando los datos dados.
+- Cuando el usuario pregunte por qué su score subió o bajó, usa "variacion_mes_actual_pts" (la variación real de este mes) y las notas de cada categoría de gasto (que ya comparan contra el mes pasado) para explicarlo — nunca inventes una cifra del mes anterior que no esté en esas notas.
 - No repitas todo el JSON de una vez; responde solo lo que se pregunta.
 
 Academia Popular (cursos_academia_popular en el JSON):

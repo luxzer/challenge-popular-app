@@ -108,6 +108,18 @@ export function ScoreGauge({ score, max, size = 220 }: { score: number; max: num
   );
 }
 
+/** Maps the score trend text to a Pill tone, and formats the monthly delta
+ * with an explicit "+" for positive values (negative already shows "-"). */
+export function trendTone(trend: string): "success" | "warning" | "danger" {
+  if (trend === "En mejora") return "success";
+  if (trend === "Necesita atención") return "danger";
+  return "warning";
+}
+
+export function formatDelta(delta: number): string {
+  return delta > 0 ? `+${delta}` : `${delta}`;
+}
+
 export function money(amount: number) {
   return `RD$${amount.toLocaleString("es-DO", { maximumFractionDigits: 0 })}`;
 }

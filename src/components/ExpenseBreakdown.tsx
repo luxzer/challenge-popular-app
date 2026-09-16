@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Card, SegmentedBar, money, moneyCents, parseLocalDate } from "./ui";
-import { ExpenseCategory, Transaction } from "@/lib/types";
+import { CategoryBreakdownItem, Transaction } from "@/lib/types";
 
 const TONE_TEXT: Record<string, string> = {
   danger: "text-danger",
@@ -12,7 +12,6 @@ const TONE_TEXT: Record<string, string> = {
   neutral: "text-muted",
 };
 
-export type CategoryBreakdownItem = { category: ExpenseCategory; amount: number; pct: number };
 export type CategoryDetail = {
   transactions: Transaction[];
   remainder: { count: number; amount: number } | null;
@@ -31,7 +30,7 @@ export function ExpenseBreakdown({
   detailsByCategory: Record<string, CategoryDetail>;
 }) {
   const [sectionOpen, setSectionOpen] = useState(false);
-  const highlight = breakdown.find((b) => b.category.insightTone === "danger") ?? breakdown[0];
+  const highlight = breakdown.find((b) => b.insightTone === "danger") ?? breakdown[0];
   const [openCategoryId, setOpenCategoryId] = useState<string | null>(highlight?.category.id ?? null);
 
   return (
@@ -83,10 +82,8 @@ export function ExpenseBreakdown({
                 <span className="flex-1" />
                 <span className="text-right">
                   <span className="block font-bold text-ink">{money(b.amount)}</span>
-                  {b.category.insight ? (
-                    <span className={`block text-xs ${TONE_TEXT[b.category.insightTone ?? "neutral"]}`}>
-                      {b.category.insight}
-                    </span>
+                  {b.insight ? (
+                    <span className={`block text-xs ${TONE_TEXT[b.insightTone ?? "neutral"]}`}>{b.insight}</span>
                   ) : null}
                 </span>
                 <span className="text-brand-orange">{isOpen ? "^" : "v"}</span>
@@ -146,8 +143,7 @@ export function ExpenseBreakdown({
         >
           Gastaste <strong>{money(highlight.amount)}</strong> en {highlight.category.name.toLowerCase()} este{" "}
           {monthLabel.toLowerCase()}
-          {highlight.category.insight ? `, ${highlight.category.insight.toLowerCase()}` : ""}. Toca para ver el
-          detalle.
+          {highlight.insight ? `, ${highlight.insight.toLowerCase()}` : ""}. Toca para ver el detalle.
         </button>
       ) : sectionOpen ? (
         <Link

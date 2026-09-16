@@ -5,15 +5,15 @@ export const runtime = "nodejs";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 
-const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+const CLAUDE_MODEL = process.env.ANTHROPIC_MODEL || "claude-haiku-4-5-20251001";
 
 export async function POST(req: NextRequest) {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
       {
         error:
-          "Falta configurar GEMINI_API_KEY en el servidor. Agrega tu API key de Google AI Studio en .env.local.",
+          "Falta configurar ANTHROPIC_API_KEY en el servidor. Agrega tu API key de console.anthropic.com en .env.local.",
       },
       { status: 500 }
     );
@@ -31,22 +31,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Se requiere al menos un mensaje." }, { status: 400 });
   }
 
-  const contents = messages.map((m) => ({
-    role: m.role === "assistant" ? "model" : "user",
-    parts: [{ text: m.content }],
-  }));
-
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
-
   try {
     const systemInstruction = await buildSystemInstruction();
-    const res = await fetch(url, {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
       body: JSON.stringify({
-        system_instruction: { parts: [{ text: systemInstruction }] },
-        contents,
-        generationConfig: { temperature: 0.4, maxOutputTokens: 512 },
+        model: CLAUDE_MODEL,
+        max_tokens: 512,
+        temperature: 0.4,
+        system: systemInstruction,
+        messages: messages.map((m) => ({ role: m.role, content: m.content })),
       }),
     });
 
@@ -59,7 +58,7 @@ export async function POST(req: NextRequest) {
     }
 
     const data = await res.json();
-    const reply: string | undefined = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    const reply: string | undefined = data?.content?.[0]?.text;
 
     if (!reply) {
       return NextResponse.json(
