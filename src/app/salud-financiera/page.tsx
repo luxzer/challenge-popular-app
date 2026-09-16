@@ -2,6 +2,7 @@ import Link from "next/link";
 import { AppHeader } from "@/components/AppHeader";
 import { CategoryDetail, ExpenseBreakdown } from "@/components/ExpenseBreakdown";
 import { LiveUpdatedLabel } from "@/components/LiveUpdatedLabel";
+import { ProfileRoller } from "@/components/ProfileRoller";
 import { Card, Pill, ScoreGauge, formatDelta, money, trendTone } from "@/components/ui";
 import { getDemoUser, getSuggestedActions } from "@/lib/db";
 import { getMonthLabel } from "@/lib/format";
@@ -46,6 +47,7 @@ export default async function ResumenPage() {
 
   return (
     <div className="pb-8">
+      <ProfileRoller />
       <AppHeader title="Salud Financiera" subtitle={<LiveUpdatedLabel />} backHref="/">
         <div className="mt-4">
           <h2 className="text-2xl font-bold text-white">Hola, {summary.userFirstName}</h2>
