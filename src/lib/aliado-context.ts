@@ -1,4 +1,5 @@
-import { ACTIONS, PREVIOUS_MONTH_LABEL } from "./data";
+import { getDemoUser, getSuggestedActions } from "./db";
+import { getPreviousMonthLabel } from "./format";
 import { getRecommendedCards } from "./recommendations";
 import { computeOverallScore, computeScoreFactors, getCategoryBreakdown, getFinancialHealthSummary } from "./score";
 
@@ -8,11 +9,16 @@ import { computeOverallScore, computeScoreFactors, getCategoryBreakdown, getFina
  * access — only this precomputed JSON — so it can't invent numbers that
  * aren't already shown elsewhere in the module.
  */
-export function buildAliadoContext() {
-  const summary = getFinancialHealthSummary();
-  const factors = computeScoreFactors();
+export async function buildAliadoContext() {
+  const user = await getDemoUser();
+  const [summary, factors, gastos, { topCards }, actions] = await Promise.all([
+    getFinancialHealthSummary(),
+    computeScoreFactors(),
+    getCategoryBreakdown(),
+    getRecommendedCards(),
+    getSuggestedActions(user.id),
+  ]);
   const score = computeOverallScore(factors);
-  const gastos = getCategoryBreakdown();
 
   return {
     usuario: summary.userFirstName,
@@ -34,7 +40,7 @@ export function buildAliadoContext() {
       uso_credito_pct: summary.creditUtilizationPct,
       tasa_ahorro_pct: summary.savingsRatePct,
       tasa_ahorro_mes_anterior_pct: 14,
-      mes_anterior: PREVIOUS_MONTH_LABEL,
+      mes_anterior: getPreviousMonthLabel(summary.asOfDateIso),
     },
     gastos_mes_actual: gastos.map((g) => ({
       categoria: g.category.name,
@@ -42,14 +48,14 @@ export function buildAliadoContext() {
       pct_del_total: g.pct,
       nota: g.category.insight ?? null,
     })),
-    tarjetas_recomendadas: getRecommendedCards().topCards.map((c) => ({
+    tarjetas_recomendadas: topCards.map((c) => ({
       nombre: c.name,
       motivo: c.matchNote,
       ahorro_anual_estimado: c.estimatedAnnualSavings,
       costo_anual: c.annualCost,
       ingreso_minimo: c.minIncome,
     })),
-    acciones_sugeridas: ACTIONS.map((a) => ({
+    acciones_sugeridas: actions.map((a) => ({
       titulo: a.title,
       detalle: a.detail,
       impacto_score_pts: a.scoreImpactPts,
@@ -58,8 +64,8 @@ export function buildAliadoContext() {
   };
 }
 
-export function buildSystemInstruction(): string {
-  const context = buildAliadoContext();
+export async function buildSystemInstruction(): Promise<string> {
+  const context = await buildAliadoContext();
 
   return `Eres "Aliado", el asistente conversacional de salud financiera dentro de la app de Banco Popular.
 

@@ -3,8 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Card, SegmentedBar, money, moneyCents, parseLocalDate } from "./ui";
-import { AS_OF_MONTH_LABEL, PREVIOUS_MONTH_LABEL } from "@/lib/data";
-import { getCategoryBreakdown, getCategoryRemainder, getTransactionsForCategory, getTotalGastos } from "@/lib/score";
+import { ExpenseCategory, Transaction } from "@/lib/types";
 
 const TONE_TEXT: Record<string, string> = {
   danger: "text-danger",
@@ -13,11 +12,27 @@ const TONE_TEXT: Record<string, string> = {
   neutral: "text-muted",
 };
 
-export function ExpenseBreakdown() {
-  const breakdown = getCategoryBreakdown().filter((b) => b.category.id !== "otros");
-  const total = getTotalGastos();
+export type CategoryBreakdownItem = { category: ExpenseCategory; amount: number; pct: number };
+export type CategoryDetail = {
+  transactions: Transaction[];
+  remainder: { count: number; amount: number } | null;
+  note?: string;
+};
+
+export function ExpenseBreakdown({
+  breakdown,
+  totalGastos,
+  monthLabel,
+  detailsByCategory,
+}: {
+  breakdown: CategoryBreakdownItem[];
+  totalGastos: number;
+  monthLabel: string;
+  detailsByCategory: Record<string, CategoryDetail>;
+}) {
   const [sectionOpen, setSectionOpen] = useState(false);
-  const [openCategoryId, setOpenCategoryId] = useState<string | null>(null);
+  const highlight = breakdown.find((b) => b.category.insightTone === "danger") ?? breakdown[0];
+  const [openCategoryId, setOpenCategoryId] = useState<string | null>(highlight?.category.id ?? null);
 
   return (
     <Card>
@@ -28,7 +43,7 @@ export function ExpenseBreakdown() {
       >
         <h2 className="text-[17px] font-bold text-ink">Análisis de gastos</h2>
         <span className="flex items-center gap-1.5 text-sm text-muted">
-          {AS_OF_MONTH_LABEL} · {money(total)}
+          {monthLabel} · {money(totalGastos)}
           <span className="text-brand-orange">{sectionOpen ? "^" : "v"}</span>
         </span>
       </button>
@@ -40,8 +55,7 @@ export function ExpenseBreakdown() {
       <div className="mt-1 divide-y divide-divider">
         {breakdown.map((b) => {
           const isOpen = openCategoryId === b.category.id;
-          const transactions = getTransactionsForCategory(b.category.id);
-          const remainder = getCategoryRemainder(b.category.id);
+          const detail = detailsByCategory[b.category.id];
 
           if (!sectionOpen) {
             return (
@@ -78,10 +92,10 @@ export function ExpenseBreakdown() {
                 <span className="text-brand-orange">{isOpen ? "^" : "v"}</span>
               </button>
 
-              {isOpen ? (
+              {isOpen && detail ? (
                 <div className="pb-3">
                   <div className="space-y-3">
-                    {transactions.map((t) => (
+                    {detail.transactions.map((t) => (
                       <div key={t.id} className="flex items-center gap-3">
                         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-danger-bg text-danger">
                           ↗
@@ -99,23 +113,20 @@ export function ExpenseBreakdown() {
                         <span className="text-danger font-semibold">-{moneyCents(t.amount)}</span>
                       </div>
                     ))}
-                    {remainder ? (
+                    {detail.remainder ? (
                       <div className="flex items-center gap-3">
                         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-page text-muted">
                           •••
                         </span>
                         <span className="flex-1 text-[15px] text-muted">
-                          Otras {remainder.count} compras en {b.category.name.toLowerCase()}
+                          Otras {detail.remainder.count} compras en {b.category.name.toLowerCase()}
                         </span>
-                        <span className="text-muted font-semibold">-{moneyCents(remainder.amount)}</span>
+                        <span className="text-muted font-semibold">-{moneyCents(detail.remainder.amount)}</span>
                       </div>
                     ) : null}
                   </div>
-                  {b.category.id === "delivery" ? (
-                    <p className="mt-3 rounded-2xl bg-page px-4 py-3 text-sm text-ink-soft">
-                      Tres pedidos por semana en promedio. Con una tarjeta de 5% en comida rápida
-                      recuperarías RD$459 de este mes.
-                    </p>
+                  {detail.note ? (
+                    <p className="mt-3 rounded-2xl bg-page px-4 py-3 text-sm text-ink-soft">{detail.note}</p>
                   ) : null}
                 </div>
               ) : null}
@@ -124,19 +135,21 @@ export function ExpenseBreakdown() {
         })}
       </div>
 
-      {!sectionOpen ? (
+      {!sectionOpen && highlight ? (
         <button
           type="button"
           onClick={() => {
             setSectionOpen(true);
-            setOpenCategoryId("delivery");
+            setOpenCategoryId(highlight.category.id);
           }}
           className="mt-1 w-full rounded-2xl bg-page px-4 py-3 text-left text-sm text-ink-soft"
         >
-          Gastaste <strong>{money(9190)}</strong> en delivery este {AS_OF_MONTH_LABEL.toLowerCase()}, 41%
-          más que en {PREVIOUS_MONTH_LABEL}. Toca para ver el detalle.
+          Gastaste <strong>{money(highlight.amount)}</strong> en {highlight.category.name.toLowerCase()} este{" "}
+          {monthLabel.toLowerCase()}
+          {highlight.category.insight ? `, ${highlight.category.insight.toLowerCase()}` : ""}. Toca para ver el
+          detalle.
         </button>
-      ) : (
+      ) : sectionOpen ? (
         <Link
           href="/salud-financiera/recomendaciones"
           className="mt-3 flex items-center justify-between text-[15px] font-bold text-ink"
@@ -144,7 +157,7 @@ export function ExpenseBreakdown() {
           Qué hacer con estos gastos
           <span className="text-brand-orange">›</span>
         </Link>
-      )}
+      ) : null}
     </Card>
   );
 }

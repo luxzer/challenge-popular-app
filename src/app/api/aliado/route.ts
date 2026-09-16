@@ -39,11 +39,12 @@ export async function POST(req: NextRequest) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
 
   try {
+    const systemInstruction = await buildSystemInstruction();
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        system_instruction: { parts: [{ text: buildSystemInstruction() }] },
+        system_instruction: { parts: [{ text: systemInstruction }] },
         contents,
         generationConfig: { temperature: 0.4, maxOutputTokens: 512 },
       }),

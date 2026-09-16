@@ -1,7 +1,9 @@
-import { POPULAR_CARDS, PopularCard } from "./cards-data";
+import { getCards } from "./db";
 import { getCategoryBreakdown } from "./score";
+import { PopularCard } from "./types";
 
 export type MatchedCard = PopularCard & { matchNote: string | null };
+type Breakdown = Awaited<ReturnType<typeof getCategoryBreakdown>>;
 
 const CATEGORY_LABELS: Record<string, string> = {
   delivery: "delivery y comida rápida",
@@ -18,10 +20,9 @@ function joinWithY(items: string[]): string {
 
 /** Builds a live "Cubre tu X% en..." note from the user's actual spend, for
  * cards whose cashback categories overlap with tracked spend categories. */
-function buildMatchNote(card: PopularCard): string | null {
+function buildMatchNote(card: PopularCard, breakdown: Breakdown): string | null {
   if (!card.matchCategoryIds?.length) return null;
 
-  const breakdown = getCategoryBreakdown();
   const matched = breakdown.filter((b) => card.matchCategoryIds!.includes(b.category.id));
   if (matched.length === 0) return null;
 
@@ -31,12 +32,13 @@ function buildMatchNote(card: PopularCard): string | null {
   return `Cubre tu ${totalPct}% en ${joinWithY(labels)}`;
 }
 
-export function getRecommendedCards(): { topCards: MatchedCard[]; otherCards: PopularCard[] } {
-  const topCards = POPULAR_CARDS.filter((c) => c.badge === "top").map((c) => ({
-    ...c,
-    matchNote: buildMatchNote(c),
-  }));
-  const otherCards = POPULAR_CARDS.filter((c) => c.badge === "estandar");
+export async function getRecommendedCards(): Promise<{ topCards: MatchedCard[]; otherCards: PopularCard[] }> {
+  const [cards, breakdown] = await Promise.all([getCards(), getCategoryBreakdown()]);
+
+  const topCards = cards
+    .filter((c) => c.badge === "top")
+    .map((c) => ({ ...c, matchNote: buildMatchNote(c, breakdown) }));
+  const otherCards = cards.filter((c) => c.badge === "estandar");
 
   return { topCards, otherCards };
 }

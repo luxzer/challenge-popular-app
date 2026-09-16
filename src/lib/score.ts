@@ -1,88 +1,13 @@
-import { AS_OF_DATE_DISPLAY, CATEGORIES, TRANSACTIONS, USER_FIRST_NAME } from "./data";
+import {
+  getAccountSignals,
+  getCategories,
+  getCategoryRemainders,
+  getCategoryTotals,
+  getDemoUser,
+  getTransactions,
+} from "./db";
+import { formatAsOfDate } from "./format";
 import { FinancialHealthSummary, ScoreFactor, ScoreFactorStatus, Transaction } from "./types";
-
-/**
- * Mock account signals a real integration would pull from core banking systems
- * (payments engine, credit bureau-free internal utilization, payroll deposits,
- * savings sub-accounts, product holdings). Everything downstream is computed
- * from these, not hardcoded, so swapping in real data only means replacing
- * this object.
- */
-export const ACCOUNT_SIGNALS = {
-  onTimePayments: 18,
-  totalPayments: 18,
-  creditUtilizationPct: 19,
-  incomeStabilityScore: 70, // 0-100, variance of payroll deposits over 12 months
-  monthlyIncome: 26280,
-  productsHeld: 2,
-  productsInUniverse: 5,
-};
-
-export const CATEGORY_TOTALS: Record<string, number> = {
-  delivery: 9190,
-  supermercado: 5320,
-  transporte: 3870,
-  servicios: 3385,
-};
-
-export function getTotalGastos(): number {
-  const known = Object.values(CATEGORY_TOTALS).reduce((a, b) => a + b, 0);
-  const otros = 24180 - known;
-  return known + otros;
-}
-
-export function getCategoryBreakdown() {
-  const total = getTotalGastos();
-  const known = Object.values(CATEGORY_TOTALS).reduce((a, b) => a + b, 0);
-  const otros = Math.max(total - known, 0);
-
-  return CATEGORIES.map((cat) => {
-    const amount = cat.id === "otros" ? otros : CATEGORY_TOTALS[cat.id] ?? 0;
-    return {
-      category: cat,
-      amount,
-      pct: Math.round((amount / total) * 100),
-    };
-  });
-}
-
-export function getTransactionsForCategory(categoryId: string): Transaction[] {
-  return TRANSACTIONS.filter((t) => t.categoryId === categoryId).sort((a, b) =>
-    a.date < b.date ? 1 : -1
-  );
-}
-
-/**
- * The category total (from core banking) minus the recent transactions we
- * show in the drill-down. Real transaction lists are long; the UI only
- * previews the most recent ones, so this reconciles the visible math instead
- * of silently showing a partial sum next to the real total.
- */
-export function getCategoryRemainder(categoryId: string): { count: number; amount: number } | null {
-  const total = CATEGORY_TOTALS[categoryId];
-  if (total === undefined) return null;
-
-  const shown = getTransactionsForCategory(categoryId);
-  const shownTotal = shown.reduce((sum, t) => sum + t.amount, 0);
-  const remainder = Math.round((total - shownTotal) * 100) / 100;
-
-  if (remainder <= 0.5) return null;
-
-  const remainderCount = REMAINDER_COUNT[categoryId] ?? 0;
-  if (remainderCount <= 0) return null;
-
-  return { count: remainderCount, amount: remainder };
-}
-
-const REMAINDER_COUNT: Record<string, number> = {
-  delivery: 7,
-};
-
-export function getSavingsRatePct(gastos: number): number {
-  const { monthlyIncome } = ACCOUNT_SIGNALS;
-  const savings = monthlyIncome - gastos;
-  return Math.max(Math.round((savings / monthlyIncome) * 100), 0);
-}
 
 function utilizationToScore(pct: number): number {
   if (pct <= 10) return 90;
@@ -109,28 +34,40 @@ const FACTOR_WEIGHTS = {
 
 const SCORE_MIN = 300;
 const SCORE_MAX = 850;
+export const SCORE_MAX_VALUE = SCORE_MAX;
 
-export function computeScoreFactors(): ScoreFactor[] {
-  const { onTimePayments, totalPayments, creditUtilizationPct, incomeStabilityScore, productsHeld, productsInUniverse } =
-    ACCOUNT_SIGNALS;
+export async function getTotalGastos(): Promise<number> {
+  const user = await getDemoUser();
+  const signals = await getAccountSignals(user.id);
+  const totals = await getCategoryTotals(user.id, signals.asOfDate);
+  return Object.values(totals).reduce((a, b) => a + b, 0);
+}
 
-  const totalGastos = getTotalGastos();
-  const savingsRatePct = getSavingsRatePct(totalGastos);
+export function getSavingsRatePctFrom(monthlyIncome: number, gastos: number): number {
+  const savings = monthlyIncome - gastos;
+  return Math.max(Math.round((savings / monthlyIncome) * 100), 0);
+}
 
-  const historialScore = Math.round((onTimePayments / totalPayments) * 100);
-  const usoCreditoScore = utilizationToScore(creditUtilizationPct);
-  const estabilidadScore = incomeStabilityScore;
+export async function computeScoreFactors(): Promise<ScoreFactor[]> {
+  const user = await getDemoUser();
+  const signals = await getAccountSignals(user.id);
+  const totalGastos = await getTotalGastos();
+  const savingsRatePct = getSavingsRatePctFrom(signals.monthlyIncome, totalGastos);
+
+  const historialScore = Math.round((signals.onTimePayments / signals.totalPayments) * 100);
+  const usoCreditoScore = utilizationToScore(signals.creditUtilizationPct);
+  const estabilidadScore = signals.incomeStabilityScore;
   const ahorroScore = Math.min(Math.round(savingsRatePct * 3.3), 100);
-  const diversidadScore = Math.round((productsHeld / productsInUniverse) * 100);
+  const diversidadScore = Math.round((signals.productsHeld / signals.productsInUniverse) * 100);
 
-  const factors: ScoreFactor[] = [
+  return [
     {
       id: "historial_pagos",
       label: "Historial de pagos",
       weightPct: FACTOR_WEIGHTS.historial_pagos,
       status: statusForScore(historialScore),
       fillPct: historialScore,
-      detail: `${onTimePayments} de ${totalPayments} pagos a tiempo en los últimos 12 meses, incluyendo tu tarjeta ****1122 y tus servicios domiciliados. Es tu factor más fuerte.`,
+      detail: `${signals.onTimePayments} de ${signals.totalPayments} pagos a tiempo en los últimos 12 meses, incluyendo tu tarjeta ****1122 y tus servicios domiciliados. Es tu factor más fuerte.`,
     },
     {
       id: "uso_credito",
@@ -138,7 +75,7 @@ export function computeScoreFactors(): ScoreFactor[] {
       weightPct: FACTOR_WEIGHTS.uso_credito,
       status: statusForScore(usoCreditoScore),
       fillPct: usoCreditoScore,
-      detail: `Usas en promedio el ${creditUtilizationPct}% de tu límite disponible. Mantenerlo por debajo del 30% ayuda a que este factor se mantenga saludable.`,
+      detail: `Usas en promedio el ${signals.creditUtilizationPct}% de tu límite disponible. Mantenerlo por debajo del 30% ayuda a que este factor se mantenga saludable.`,
     },
     {
       id: "estabilidad_ingresos",
@@ -162,11 +99,9 @@ export function computeScoreFactors(): ScoreFactor[] {
       weightPct: FACTOR_WEIGHTS.diversidad_productos,
       status: statusForScore(diversidadScore),
       fillPct: diversidadScore,
-      detail: `Tienes ${productsHeld} de ${productsInUniverse} tipos de producto con el banco. Sumar uno más, como una cuenta de inversión, sube este factor.`,
+      detail: `Tienes ${signals.productsHeld} de ${signals.productsInUniverse} tipos de producto con el banco. Sumar uno más, como una cuenta de inversión, sube este factor.`,
     },
   ];
-
-  return factors;
 }
 
 export function computeOverallScore(factors: ScoreFactor[]): number {
@@ -175,23 +110,72 @@ export function computeOverallScore(factors: ScoreFactor[]): number {
   return Math.round(score);
 }
 
-export const SCORE_DELTA_MONTH = 18;
-export const SCORE_MAX_VALUE = SCORE_MAX;
-
-export function getFinancialHealthSummary(): FinancialHealthSummary {
-  const factors = computeScoreFactors();
+export async function getFinancialHealthSummary(): Promise<FinancialHealthSummary> {
+  const user = await getDemoUser();
+  const signals = await getAccountSignals(user.id);
+  const factors = await computeScoreFactors();
   const score = computeOverallScore(factors);
-  const totalGastos = getTotalGastos();
+  const totalGastos = await getTotalGastos();
 
   return {
-    userFirstName: USER_FIRST_NAME,
-    asOfDate: AS_OF_DATE_DISPLAY,
+    userFirstName: user.firstName,
+    asOfDate: formatAsOfDate(signals.asOfDate),
+    asOfDateIso: signals.asOfDate,
     score,
     scoreMax: SCORE_MAX_VALUE,
-    scoreDeltaMonth: SCORE_DELTA_MONTH,
-    scoreTrend: "En mejora",
-    onTimePaymentsPct: Math.round((ACCOUNT_SIGNALS.onTimePayments / ACCOUNT_SIGNALS.totalPayments) * 100),
-    creditUtilizationPct: ACCOUNT_SIGNALS.creditUtilizationPct,
-    savingsRatePct: getSavingsRatePct(totalGastos),
+    scoreDeltaMonth: signals.scoreDeltaMonth,
+    scoreTrend: signals.scoreTrend,
+    onTimePaymentsPct: Math.round((signals.onTimePayments / signals.totalPayments) * 100),
+    creditUtilizationPct: signals.creditUtilizationPct,
+    savingsRatePct: getSavingsRatePctFrom(signals.monthlyIncome, totalGastos),
   };
+}
+
+export async function getCategoryBreakdown() {
+  const user = await getDemoUser();
+  const signals = await getAccountSignals(user.id);
+  const [categories, totals] = await Promise.all([
+    getCategories(),
+    getCategoryTotals(user.id, signals.asOfDate),
+  ]);
+  const total = Object.values(totals).reduce((a, b) => a + b, 0);
+
+  return categories.map((category) => {
+    const amount = totals[category.id] ?? 0;
+    return { category, amount, pct: Math.round((amount / total) * 100) };
+  });
+}
+
+export async function getTransactionsForCategory(categoryId: string): Promise<Transaction[]> {
+  const user = await getDemoUser();
+  const all = await getTransactions(user.id);
+  return all.filter((t) => t.categoryId === categoryId);
+}
+
+/**
+ * The category total (from core banking) minus the recent transactions we
+ * show in the drill-down. Real transaction lists are long; the UI only
+ * previews the most recent ones, so this reconciles the visible math instead
+ * of silently showing a partial sum next to the real total.
+ */
+export async function getCategoryRemainder(categoryId: string): Promise<{ count: number; amount: number } | null> {
+  const user = await getDemoUser();
+  const signals = await getAccountSignals(user.id);
+  const [totals, remainders, transactions] = await Promise.all([
+    getCategoryTotals(user.id, signals.asOfDate),
+    getCategoryRemainders(user.id, signals.asOfDate),
+    getTransactionsForCategory(categoryId),
+  ]);
+
+  const total = totals[categoryId];
+  if (total === undefined) return null;
+
+  const shownTotal = transactions.reduce((sum, t) => sum + t.amount, 0);
+  const remainder = Math.round((total - shownTotal) * 100) / 100;
+  if (remainder <= 0.5) return null;
+
+  const count = remainders[categoryId] ?? 0;
+  if (count <= 0) return null;
+
+  return { count, amount: remainder };
 }

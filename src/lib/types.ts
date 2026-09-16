@@ -35,6 +35,7 @@ export type ScoreFactor = {
 export type FinancialHealthSummary = {
   userFirstName: string;
   asOfDate: string; // display date e.g. "27 de agosto, 2026"
+  asOfDateIso: string; // "2026-08-27"
   score: number;
   scoreMax: number;
   scoreDeltaMonth: number;
@@ -54,4 +55,29 @@ export type SuggestedAction = {
   secondaryCta: string;
   direction: "up" | "down";
   category: "deuda" | "ahorro" | "tarjetas";
+};
+
+export type CashbackItem = {
+  label: string;
+  limit: string;
+  estimatedAnnualSavings: string;
+};
+
+export type PopularCard = {
+  id: string;
+  name: string;
+  issuer: string;
+  network: "Visa" | "Mastercard";
+  badge: "top" | "estandar";
+  badgeLabel: string;
+  estimatedAnnualSavings: number;
+  annualCost: string;
+  minIncome: string;
+  redemption: string;
+  cashback: CashbackItem[];
+  perks?: string[];
+  imagePath: string | null;
+  /** Ids from the categories table this card's cashback meaningfully covers,
+   * used to compute a live "Cubre tu X% en..." match note from real spend. */
+  matchCategoryIds?: string[];
 };

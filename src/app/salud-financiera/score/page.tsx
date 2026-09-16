@@ -16,15 +16,17 @@ const STATUS_TEXT: Record<string, string> = {
   Bajo: "text-danger",
 };
 
-export default function ScoreBreakdownPage() {
-  const factors = computeScoreFactors();
+export const dynamic = "force-dynamic";
+
+export default async function ScoreBreakdownPage() {
+  const factors = await computeScoreFactors();
   const score = computeOverallScore(factors);
 
   return (
     <div className="pb-8">
       <AppHeader title="Desglose del score" subtitle={`${score} de ${SCORE_MAX_VALUE} · En mejora`} />
 
-      <div className="-mt-4 space-y-4 px-5">
+      <div className="mt-4 space-y-4 px-5">
         <Card className="flex items-center gap-4">
           <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-4 border-brand-blue-light text-xl font-extrabold text-ink">
             {score}

@@ -3,8 +3,8 @@
 import Image from "next/image";
 import { useState } from "react";
 import { Card, Pill, money } from "./ui";
-import { ACTIONS } from "@/lib/data";
-import { getRecommendedCards } from "@/lib/recommendations";
+import { SuggestedAction, PopularCard } from "@/lib/types";
+import { MatchedCard } from "@/lib/recommendations";
 
 const FILTERS = [
   { id: "todas", label: "Todas" },
@@ -23,12 +23,19 @@ function NetworkBadge({ network }: { network: string }) {
   );
 }
 
-export function RecommendationsTabs() {
+export function RecommendationsTabs({
+  topCards,
+  otherCards,
+  actions,
+}: {
+  topCards: MatchedCard[];
+  otherCards: PopularCard[];
+  actions: SuggestedAction[];
+}) {
   const [filter, setFilter] = useState<FilterId>("todas");
-  const { topCards, otherCards } = getRecommendedCards();
 
   const showCards = filter === "todas" || filter === "tarjetas";
-  const showActions = filter === "todas" || ACTIONS.some((a) => a.category === filter);
+  const showActions = filter === "todas" || actions.some((a) => a.category === filter);
 
   return (
     <div>
@@ -166,7 +173,7 @@ export function RecommendationsTabs() {
         ) : null}
 
         {showActions
-          ? ACTIONS.filter((a) => filter === "todas" || a.category === filter).map((action) => (
+          ? actions.filter((a) => filter === "todas" || a.category === filter).map((action) => (
               <Card key={action.id}>
                 <div className="flex gap-3">
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-page text-ink">

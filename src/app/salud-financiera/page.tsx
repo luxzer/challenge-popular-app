@@ -1,16 +1,48 @@
 import Link from "next/link";
 import { AppHeader } from "@/components/AppHeader";
-import { ExpenseBreakdown } from "@/components/ExpenseBreakdown";
+import { CategoryDetail, ExpenseBreakdown } from "@/components/ExpenseBreakdown";
 import { LiveUpdatedLabel } from "@/components/LiveUpdatedLabel";
 import { Card, Pill, ScoreGauge, money } from "@/components/ui";
-import { ACTIONS } from "@/lib/data";
-import { getFinancialHealthSummary } from "@/lib/score";
+import { getDemoUser, getSuggestedActions } from "@/lib/db";
+import { getMonthLabel } from "@/lib/format";
 import { getRecommendedCards } from "@/lib/recommendations";
+import {
+  getCategoryBreakdown,
+  getCategoryRemainder,
+  getFinancialHealthSummary,
+  getTransactionsForCategory,
+} from "@/lib/score";
 
-export default function ResumenPage() {
-  const summary = getFinancialHealthSummary();
-  const topAction = ACTIONS[0];
-  const topCard = getRecommendedCards().topCards.find((c) => c.id === "mastercard-gnial")!;
+export const dynamic = "force-dynamic";
+
+export default async function ResumenPage() {
+  const user = await getDemoUser();
+  const [summary, actions, { topCards }, breakdown] = await Promise.all([
+    getFinancialHealthSummary(),
+    getSuggestedActions(user.id),
+    getRecommendedCards(),
+    getCategoryBreakdown(),
+  ]);
+
+  const topAction = actions[0];
+  const topCard = topCards.find((c) => c.id === "mastercard-gnial") ?? topCards[0];
+  const realCategories = breakdown.filter((b) => b.category.id !== "otros");
+
+  const detailsByCategory: Record<string, CategoryDetail> = {};
+  for (const b of realCategories) {
+    const [transactions, remainder] = await Promise.all([
+      getTransactionsForCategory(b.category.id),
+      getCategoryRemainder(b.category.id),
+    ]);
+    detailsByCategory[b.category.id] = {
+      transactions,
+      remainder,
+      note:
+        b.category.id === "delivery"
+          ? "Tres pedidos por semana en promedio. Con una tarjeta de 5% en comida rápida recuperarías RD$459 de este mes."
+          : undefined,
+    };
+  }
 
   return (
     <div className="pb-8">
@@ -51,7 +83,12 @@ export default function ResumenPage() {
           </Link>
         </Card>
 
-        <ExpenseBreakdown />
+        <ExpenseBreakdown
+          breakdown={realCategories}
+          totalGastos={breakdown.reduce((sum, b) => sum + b.amount, 0)}
+          monthLabel={getMonthLabel(summary.asOfDateIso)}
+          detailsByCategory={detailsByCategory}
+        />
 
         <Card>
           <div className="flex items-baseline justify-between">
@@ -62,22 +99,26 @@ export default function ResumenPage() {
           </div>
 
           <div className="mt-3 divide-y divide-divider">
-            <div className="flex items-center gap-3 py-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-page text-ink">
-                ↑
-              </span>
-              <span className="flex-1 text-[15px] text-ink">{topAction.title}</span>
-              <span className="text-sm font-bold text-success">+{topAction.scoreImpactPts} pts</span>
-            </div>
-            <div className="flex items-center gap-3 py-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-warning-bg text-warning">
-                %
-              </span>
-              <span className="flex-1 text-[15px] text-ink">
-                Una tarjeta con 5% en comida rápida se ajusta a tu consumo
-              </span>
-              <span className="text-sm font-bold text-success">{money(topCard.estimatedAnnualSavings)}</span>
-            </div>
+            {topAction ? (
+              <div className="flex items-center gap-3 py-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-page text-ink">
+                  ↑
+                </span>
+                <span className="flex-1 text-[15px] text-ink">{topAction.title}</span>
+                <span className="text-sm font-bold text-success">+{topAction.scoreImpactPts} pts</span>
+              </div>
+            ) : null}
+            {topCard ? (
+              <div className="flex items-center gap-3 py-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-warning-bg text-warning">
+                  %
+                </span>
+                <span className="flex-1 text-[15px] text-ink">
+                  Una tarjeta con 5% en comida rápida se ajusta a tu consumo
+                </span>
+                <span className="text-sm font-bold text-success">{money(topCard.estimatedAnnualSavings)}</span>
+              </div>
+            ) : null}
           </div>
         </Card>
 

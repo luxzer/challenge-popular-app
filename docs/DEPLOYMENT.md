@@ -10,9 +10,16 @@
 
 ## Variables de entorno en Netlify
 
-El deploy actual **no tiene `GEMINI_API_KEY` configurada** — el resto del
-módulo funciona perfecto, pero el chat de Aliado va a mostrar el error
-"Falta configurar GEMINI_API_KEY" hasta que se agregue. Para activarlo:
+Configuradas (`netlify env:list` para verlas):
+
+- `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` — ya seteadas, el módulo lee
+  todo su contenido de la base de datos real. Ver [`DATABASE.md`](./DATABASE.md).
+
+Pendiente:
+
+- `GEMINI_API_KEY` — **no está configurada todavía**. El resto del módulo
+  funciona perfecto, pero el chat de Aliado muestra el error "Falta
+  configurar GEMINI_API_KEY" hasta que se agregue:
 
 ```bash
 netlify env:set GEMINI_API_KEY "tu-api-key-de-google-ai-studio"
