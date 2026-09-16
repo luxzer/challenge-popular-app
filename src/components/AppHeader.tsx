@@ -14,7 +14,7 @@ export function AppHeader({
 }) {
   return (
     <div
-      className="sticky top-0 z-20 rounded-b-[28px] px-6 pb-8"
+      className="sticky top-0 z-20 rounded-b-[28px] px-6 pb-6"
       style={{
         background: "linear-gradient(160deg, var(--brand-navy-deep) 0%, var(--brand-blue) 100%)",
       }}

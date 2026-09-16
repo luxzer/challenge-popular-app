@@ -53,8 +53,9 @@ export default async function ResumenPage() {
         </div>
       </AppHeader>
 
-      <div className="-mt-5 space-y-4 px-5">
-        <Card className="pt-6">
+      <div className="mt-4 space-y-4 px-5">
+        <Card>
+          <h2 className="text-[17px] font-bold text-ink">Tu resumen</h2>
           <ScoreGauge score={summary.score} max={summary.scoreMax} />
           <div className="mt-2 flex justify-center">
             <Pill tone="success">En mejora · +{summary.scoreDeltaMonth} pts este mes</Pill>
