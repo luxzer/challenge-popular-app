@@ -5,7 +5,18 @@ import { AppHeader } from "@/components/AppHeader";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 
-const QUICK_REPLIES = ["¿En qué se me va el dinero?", "¿Cómo subo 50 puntos?", "¿Me conviene consolidar mi deuda?"];
+const QUICK_REPLIES = ["¿En qué se me va el dinero?", "¿Cómo subo 50 puntos?", "¿Que tarjeta me recomiendas?"];
+
+// Matches the exact closing line the system prompt asks the model to use
+// when recommending an Academia Popular course, so it can be rendered as
+// its own card instead of inline text with a raw (often very long) URL.
+const COURSE_LINE = /\n*Si quieres saber más,?\s*ve al curso\s+(.+?)\s+de la Academia Popular:\s*(\S+)\s*$/i;
+
+function splitCourseRecommendation(content: string): { body: string; course: { title: string; url: string } | null } {
+  const match = content.match(COURSE_LINE);
+  if (!match) return { body: content, course: null };
+  return { body: content.slice(0, match.index).trim(), course: { title: match[1].trim(), url: match[2].trim() } };
+}
 
 export function AliadoChat({ userFirstName, score, scoreDeltaMonth }: { userFirstName: string; score: number; scoreDeltaMonth: number }) {
   const deltaClause =
@@ -80,19 +91,47 @@ export function AliadoChat({ userFirstName, score, scoreDeltaMonth }: { userFirs
       </div>
 
       <div ref={listRef} className="flex-1 space-y-3 overflow-y-auto bg-page px-5 py-4">
-        {messages.map((m, i) => (
-          <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-            <div
-              className={`max-w-[85%] whitespace-pre-wrap rounded-3xl px-4 py-3 text-[15px] ${
-                m.role === "user"
-                  ? "rounded-br-md bg-brand-navy-deep text-white"
-                  : "rounded-bl-md bg-surface text-ink shadow-[0_1px_2px_rgba(11,37,69,0.06)]"
-              }`}
-            >
-              {m.content}
+        {messages.map((m, i) => {
+          if (m.role === "user") {
+            return (
+              <div key={i} className="flex justify-end">
+                <div className="max-w-[85%] whitespace-pre-wrap break-words rounded-3xl rounded-br-md bg-brand-navy-deep px-4 py-3 text-[15px] text-white">
+                  {m.content}
+                </div>
+              </div>
+            );
+          }
+
+          const { body, course } = splitCourseRecommendation(m.content);
+          return (
+            <div key={i} className="flex justify-start">
+              <div className="max-w-[85%] space-y-2">
+                <div className="whitespace-pre-wrap break-words rounded-3xl rounded-bl-md bg-surface px-4 py-3 text-[15px] text-ink shadow-[0_1px_2px_rgba(11,37,69,0.06)]">
+                  {body}
+                </div>
+                {course ? (
+                  <a
+                    href={course.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-3 rounded-2xl bg-warning-bg px-4 py-3 text-left"
+                  >
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-lg">
+                      🎓
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[11px] font-bold uppercase tracking-wide text-warning">
+                        Academia Popular
+                      </span>
+                      <span className="block truncate text-[14px] font-semibold text-ink">{course.title}</span>
+                    </span>
+                    <span className="shrink-0 text-brand-orange">›</span>
+                  </a>
+                ) : null}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
 
         {loading ? (
           <div className="flex justify-start">
