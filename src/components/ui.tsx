@@ -115,3 +115,11 @@ export function money(amount: number) {
 export function moneyCents(amount: number) {
   return `RD$${amount.toLocaleString("es-DO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
+
+/** Parses a "YYYY-MM-DD" string as a local date, avoiding the UTC-midnight
+ * shift that makes `new Date("YYYY-MM-DD")` render as the previous day in
+ * negative-UTC-offset timezones. */
+export function parseLocalDate(isoDate: string): Date {
+  const [year, month, day] = isoDate.split("-").map(Number);
+  return new Date(year, month - 1, day);
+}

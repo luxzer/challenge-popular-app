@@ -8,13 +8,13 @@ export function AppHeader({
   children,
 }: {
   title: string;
-  subtitle?: string;
+  subtitle?: React.ReactNode;
   backHref?: string | null;
   children?: React.ReactNode;
 }) {
   return (
     <div
-      className="sticky top-0 z-20 rounded-b-[28px] px-6 pb-6"
+      className="sticky top-0 z-20 rounded-b-[28px] px-6 pb-8"
       style={{
         background: "linear-gradient(160deg, var(--brand-navy-deep) 0%, var(--brand-blue) 100%)",
       }}

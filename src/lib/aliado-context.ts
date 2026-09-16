@@ -1,4 +1,5 @@
-import { ACTIONS, CARDS, PREVIOUS_MONTH_LABEL } from "./data";
+import { ACTIONS, PREVIOUS_MONTH_LABEL } from "./data";
+import { getRecommendedCards } from "./recommendations";
 import { computeOverallScore, computeScoreFactors, getCategoryBreakdown, getFinancialHealthSummary } from "./score";
 
 /**
@@ -41,10 +42,12 @@ export function buildAliadoContext() {
       pct_del_total: g.pct,
       nota: g.category.insight ?? null,
     })),
-    tarjetas_recomendadas: CARDS.map((c) => ({
+    tarjetas_recomendadas: getRecommendedCards().topCards.map((c) => ({
       nombre: c.name,
       motivo: c.matchNote,
       ahorro_anual_estimado: c.estimatedAnnualSavings,
+      costo_anual: c.annualCost,
+      ingreso_minimo: c.minIncome,
     })),
     acciones_sugeridas: ACTIONS.map((a) => ({
       titulo: a.title,

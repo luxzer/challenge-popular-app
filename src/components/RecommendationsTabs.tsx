@@ -1,8 +1,10 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import { Card, Pill, money } from "./ui";
-import { ACTIONS, CARDS } from "@/lib/data";
+import { ACTIONS } from "@/lib/data";
+import { getRecommendedCards } from "@/lib/recommendations";
 
 const FILTERS = [
   { id: "todas", label: "Todas" },
@@ -13,8 +15,17 @@ const FILTERS = [
 
 type FilterId = (typeof FILTERS)[number]["id"];
 
+function NetworkBadge({ network }: { network: string }) {
+  return (
+    <div className="flex h-14 w-20 shrink-0 items-center justify-center rounded-xl bg-brand-navy-deep text-xs font-bold text-white">
+      {network}
+    </div>
+  );
+}
+
 export function RecommendationsTabs() {
   const [filter, setFilter] = useState<FilterId>("todas");
+  const { topCards, otherCards } = getRecommendedCards();
 
   const showCards = filter === "todas" || filter === "tarjetas";
   const showActions = filter === "todas" || ACTIONS.some((a) => a.category === filter);
@@ -49,23 +60,29 @@ export function RecommendationsTabs() {
                 Comparadas contra tu distribución de gastos de los últimos 3 meses.
               </p>
             </div>
-            {CARDS.map((card) => (
+            {topCards.map((card) => (
               <Card key={card.id}>
                 <div className="flex gap-3">
-                  <div className="flex h-14 w-20 shrink-0 items-center justify-center rounded-xl bg-brand-navy-deep text-xs font-bold text-white">
-                    {card.network}
-                  </div>
+                  {card.imagePath ? (
+                    <div className="relative h-14 w-20 shrink-0 overflow-hidden rounded-xl bg-page">
+                      <Image src={card.imagePath} alt={card.name} fill className="object-cover" />
+                    </div>
+                  ) : (
+                    <NetworkBadge network={card.network} />
+                  )}
                   <div>
                     <h3 className="text-[16px] font-bold text-ink">{card.name}</h3>
                     <p className="text-sm text-muted">
-                      {card.network} · {card.productType}
+                      {card.network} · crédito
                     </p>
                   </div>
                 </div>
 
-                <Pill tone="success" className="mt-3 block w-fit text-left">
-                  {card.matchNote}
-                </Pill>
+                {card.matchNote ? (
+                  <Pill tone="success" className="mt-3 block w-fit text-left">
+                    {card.matchNote}
+                  </Pill>
+                ) : null}
 
                 <div className="mt-4 flex justify-between text-xs font-semibold uppercase tracking-wide text-muted">
                   <span>Cashback</span>
@@ -73,24 +90,30 @@ export function RecommendationsTabs() {
                 </div>
                 <div className="mt-1 divide-y divide-divider">
                   {card.cashback.map((c, i) => (
-                    <div key={i} className="flex items-center justify-between py-2.5 text-[15px]">
+                    <div key={i} className="flex items-center justify-between gap-3 py-2.5 text-[15px]">
                       <span className="text-ink">{c.label}</span>
-                      <span className="text-muted">{c.limit}</span>
+                      <span className="shrink-0 text-muted">{c.limit}</span>
                     </div>
                   ))}
                 </div>
 
-                {card.perksNote ? <p className="mt-3 text-sm text-muted">{card.perksNote}</p> : null}
+                {card.perks?.length ? (
+                  <p className="mt-3 text-sm text-muted">{card.perks.join(", ")}.</p>
+                ) : null}
 
-                <div className="mt-4 rounded-2xl bg-page px-4 py-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-                    Ahorro estimado anual
-                  </p>
-                  <p className="text-xl font-extrabold text-ink">
-                    {money(card.estimatedAnnualSavings)}{" "}
-                    <span className="text-sm font-normal text-muted">con tu consumo actual</span>
-                  </p>
+                <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                  <div className="rounded-2xl bg-page px-4 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+                      Ahorro estimado anual
+                    </p>
+                    <p className="text-lg font-extrabold text-ink">{money(card.estimatedAnnualSavings)}</p>
+                  </div>
+                  <div className="rounded-2xl bg-page px-4 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted">Costo anual</p>
+                    <p className="text-lg font-extrabold text-ink">{card.annualCost}</p>
+                  </div>
                 </div>
+                <p className="mt-2 text-xs text-muted">Ingreso mínimo requerido: {card.minIncome}</p>
 
                 <div className="mt-4 flex gap-3">
                   <button className="flex-1 rounded-full bg-brand-orange py-3 text-[15px] font-bold text-white">
@@ -102,6 +125,43 @@ export function RecommendationsTabs() {
                 </div>
               </Card>
             ))}
+
+            <Card>
+              <h3 className="text-[16px] font-bold text-ink">Otras tarjetas Popular</h3>
+              <p className="mt-1 text-sm text-muted">
+                No se ajustan tanto a tu consumo actual, pero están disponibles si buscas otro beneficio.
+              </p>
+              <div className="mt-2 divide-y divide-divider">
+                {otherCards.map((card) => (
+                  <div key={card.id} className="flex items-center gap-3 py-3">
+                    {card.imagePath ? (
+                      <div className="relative h-10 w-14 shrink-0 overflow-hidden rounded-lg bg-page">
+                        <Image src={card.imagePath} alt={card.name} fill className="object-cover" />
+                      </div>
+                    ) : (
+                      <div className="flex h-10 w-14 shrink-0 items-center justify-center rounded-lg bg-page text-[10px] font-bold text-muted">
+                        {card.network}
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <p className="text-[14px] font-bold text-ink">{card.name}</p>
+                      <p className="text-xs text-muted">
+                        Costo anual {card.annualCost} · Ingreso mínimo {card.minIncome}
+                      </p>
+                    </div>
+                    <span
+                      className={`text-xs font-semibold ${
+                        card.estimatedAnnualSavings >= 0 ? "text-success" : "text-muted"
+                      }`}
+                    >
+                      {card.estimatedAnnualSavings >= 0
+                        ? `${money(card.estimatedAnnualSavings)} / año`
+                        : "Sin ahorro extra"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </Card>
           </>
         ) : null}
 

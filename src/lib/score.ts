@@ -12,7 +12,7 @@ export const ACCOUNT_SIGNALS = {
   onTimePayments: 18,
   totalPayments: 18,
   creditUtilizationPct: 19,
-  incomeStabilityScore: 68, // 0-100, variance of payroll deposits over 12 months
+  incomeStabilityScore: 70, // 0-100, variance of payroll deposits over 12 months
   monthlyIncome: 26280,
   productsHeld: 2,
   productsInUniverse: 5,
@@ -51,6 +51,32 @@ export function getTransactionsForCategory(categoryId: string): Transaction[] {
     a.date < b.date ? 1 : -1
   );
 }
+
+/**
+ * The category total (from core banking) minus the recent transactions we
+ * show in the drill-down. Real transaction lists are long; the UI only
+ * previews the most recent ones, so this reconciles the visible math instead
+ * of silently showing a partial sum next to the real total.
+ */
+export function getCategoryRemainder(categoryId: string): { count: number; amount: number } | null {
+  const total = CATEGORY_TOTALS[categoryId];
+  if (total === undefined) return null;
+
+  const shown = getTransactionsForCategory(categoryId);
+  const shownTotal = shown.reduce((sum, t) => sum + t.amount, 0);
+  const remainder = Math.round((total - shownTotal) * 100) / 100;
+
+  if (remainder <= 0.5) return null;
+
+  const remainderCount = REMAINDER_COUNT[categoryId] ?? 0;
+  if (remainderCount <= 0) return null;
+
+  return { count: remainderCount, amount: remainder };
+}
+
+const REMAINDER_COUNT: Record<string, number> = {
+  delivery: 7,
+};
 
 export function getSavingsRatePct(gastos: number): number {
   const { monthlyIncome } = ACCOUNT_SIGNALS;

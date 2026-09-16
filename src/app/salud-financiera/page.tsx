@@ -1,32 +1,34 @@
 import Link from "next/link";
 import { AppHeader } from "@/components/AppHeader";
 import { ExpenseBreakdown } from "@/components/ExpenseBreakdown";
+import { LiveUpdatedLabel } from "@/components/LiveUpdatedLabel";
 import { Card, Pill, ScoreGauge, money } from "@/components/ui";
-import { ACTIONS, CARDS } from "@/lib/data";
+import { ACTIONS } from "@/lib/data";
 import { getFinancialHealthSummary } from "@/lib/score";
+import { getRecommendedCards } from "@/lib/recommendations";
 
 export default function ResumenPage() {
   const summary = getFinancialHealthSummary();
   const topAction = ACTIONS[0];
-  const topCard = CARDS[0];
+  const topCard = getRecommendedCards().topCards.find((c) => c.id === "mastercard-gnial")!;
 
   return (
     <div className="pb-8">
-      <AppHeader title="Salud Financiera" subtitle="Actualizado hoy, 10:36 a.m." backHref="/">
+      <AppHeader title="Salud Financiera" subtitle={<LiveUpdatedLabel />} backHref="/">
         <div className="mt-4">
           <h2 className="text-2xl font-bold text-white">Hola, {summary.userFirstName}</h2>
           <p className="mt-1 text-sm text-white/85">Tu diagnóstico al {summary.asOfDate}</p>
         </div>
       </AppHeader>
 
-      <div className="-mt-8 space-y-4 px-5">
-        <Card>
+      <div className="-mt-5 space-y-4 px-5">
+        <Card className="pt-6">
           <ScoreGauge score={summary.score} max={summary.scoreMax} />
-          <div className="mt-1 flex justify-center">
+          <div className="mt-2 flex justify-center">
             <Pill tone="success">En mejora · +{summary.scoreDeltaMonth} pts este mes</Pill>
           </div>
 
-          <div className="mt-5 grid grid-cols-3 divide-x divide-divider border-t border-divider pt-4 text-center">
+          <div className="mt-6 grid grid-cols-3 divide-x divide-divider border-t border-divider pt-5 text-center">
             <div>
               <p className="text-lg font-bold text-ink">{summary.onTimePaymentsPct}%</p>
               <p className="text-xs text-muted">Pagos a tiempo</p>

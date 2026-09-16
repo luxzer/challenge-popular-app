@@ -44,17 +44,6 @@ export type FinancialHealthSummary = {
   savingsRatePct: number;
 };
 
-export type RecommendedCard = {
-  id: string;
-  name: string;
-  network: string;
-  productType: string;
-  matchNote: string;
-  cashback: { label: string; limit: string }[];
-  perksNote?: string;
-  estimatedAnnualSavings: number;
-};
-
 export type SuggestedAction = {
   id: string;
   title: string;

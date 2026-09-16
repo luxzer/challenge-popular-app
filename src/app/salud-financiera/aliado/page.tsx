@@ -2,18 +2,20 @@
 
 import { FormEvent, useRef, useState } from "react";
 import { AppHeader } from "@/components/AppHeader";
+import { getFinancialHealthSummary } from "@/lib/score";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
-
-const INITIAL_MESSAGE: ChatMessage = {
-  role: "assistant",
-  content: "Hola Luis. Tu score va en 682 y subió 18 puntos este mes. ¿Qué quieres revisar?",
-};
 
 const QUICK_REPLIES = ["¿En qué se me va el dinero?", "¿Cómo subo 50 puntos?", "¿Me conviene consolidar mi deuda?"];
 
 export default function AliadoPage() {
-  const [messages, setMessages] = useState<ChatMessage[]>([INITIAL_MESSAGE]);
+  const summary = getFinancialHealthSummary();
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    {
+      role: "assistant",
+      content: `Hola ${summary.userFirstName}. Tu score va en ${summary.score} y subió ${summary.scoreDeltaMonth} puntos este mes. ¿Qué quieres revisar?`,
+    },
+  ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

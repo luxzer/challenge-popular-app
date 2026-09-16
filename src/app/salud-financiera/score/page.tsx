@@ -24,7 +24,7 @@ export default function ScoreBreakdownPage() {
     <div className="pb-8">
       <AppHeader title="Desglose del score" subtitle={`${score} de ${SCORE_MAX_VALUE} · En mejora`} />
 
-      <div className="-mt-6 space-y-4 px-5">
+      <div className="-mt-4 space-y-4 px-5">
         <Card className="flex items-center gap-4">
           <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-4 border-brand-blue-light text-xl font-extrabold text-ink">
             {score}

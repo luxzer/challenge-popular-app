@@ -1,4 +1,4 @@
-import { ExpenseCategory, RecommendedCard, SuggestedAction, Transaction } from "./types";
+import { ExpenseCategory, SuggestedAction, Transaction } from "./types";
 
 export const CATEGORIES: ExpenseCategory[] = [
   {
@@ -45,7 +45,7 @@ export const TRANSACTIONS: Transaction[] = [
   { id: "t6", merchant: "PEDIDOSYA", date: "2026-08-11", amount: 512.75, categoryId: "delivery" },
   { id: "t7", merchant: "SUPERMERCADO NACIONAL", date: "2026-08-23", amount: 2140.0, categoryId: "supermercado" },
   { id: "t8", merchant: "LA SIRENA", date: "2026-08-09", amount: 1680.5, categoryId: "supermercado" },
-  { id: "t9", merchant: "JUMBO", date: "2026-08-02", amount: 1499.3, categoryId: "supermercado" },
+  { id: "t9", merchant: "JUMBO", date: "2026-08-02", amount: 1499.5, categoryId: "supermercado" },
   { id: "t10", merchant: "UBER", date: "2026-08-27", amount: 340.0, categoryId: "transporte" },
   { id: "t11", merchant: "GASOLINA SHELL", date: "2026-08-20", amount: 2200.0, categoryId: "transporte" },
   { id: "t12", merchant: "METRO SANTO DOMINGO", date: "2026-08-05", amount: 1330.0, categoryId: "transporte" },
@@ -53,40 +53,6 @@ export const TRANSACTIONS: Transaction[] = [
   { id: "t14", merchant: "SPOTIFY", date: "2026-08-13", amount: 259.0, categoryId: "servicios" },
   { id: "t15", merchant: "CLARO DOMINICANA", date: "2026-08-10", amount: 1850.0, categoryId: "servicios" },
   { id: "t16", merchant: "GYM FITNESS CLUB", date: "2026-08-06", amount: 686.0, categoryId: "servicios" },
-];
-
-export const CARDS: RecommendedCard[] = [
-  {
-    id: "gnial",
-    name: "Mastercard gnial",
-    network: "Mastercard",
-    productType: "crédito",
-    matchNote: "Cubre tu 38% en delivery y comida rápida",
-    cashback: [
-      { label: "5% en Comida rápida", limit: "RD$1,000 / mes" },
-      { label: "5% en Streaming y cines", limit: "RD$1,000 / mes" },
-      { label: "5% en Juegos digitales", limit: "RD$1,000 / mes" },
-      { label: "Amazon, Apple y Deportes", limit: "Sin límite" },
-      { label: "bonus gnial", limit: "Sin límite" },
-    ],
-    perksNote: "Incluye asistencia de viajes, protección de compras y garantía extendida.",
-    estimatedAnnualSavings: 5400,
-  },
-  {
-    id: "rewards-popular",
-    name: "Visa Rewards Popular",
-    network: "Visa",
-    productType: "crédito",
-    matchNote: "Cubre tu 22% en supermercado y transporte",
-    cashback: [
-      { label: "5% en Supermercado", limit: "RD$2,000 / mes" },
-      { label: "5% en Combustible", limit: "RD$2,000 / mes" },
-      { label: "2% en Compras en línea", limit: "RD$2,000 / mes" },
-      { label: "1% en Resto de categorías", limit: "RD$10,000 / año" },
-    ],
-    perksNote: "Cashback tope mensual por categoría; el resto acumula hasta el tope anual.",
-    estimatedAnnualSavings: 3600,
-  },
 ];
 
 export const ACTIONS: SuggestedAction[] = [
