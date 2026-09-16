@@ -71,20 +71,23 @@ export function RecommendationsTabs({
             </div>
             {topCards.map((card) => (
               <Card key={card.id}>
-                <div className="flex gap-3">
-                  {card.imagePath ? (
-                    <div className="relative h-14 w-20 shrink-0 overflow-hidden rounded-xl bg-page">
-                      <Image src={card.imagePath} alt={card.name} fill className="object-cover" />
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex gap-3">
+                    {card.imagePath ? (
+                      <div className="relative h-14 w-20 shrink-0 overflow-hidden rounded-xl bg-page">
+                        <Image src={card.imagePath} alt={card.name} fill className="object-cover" />
+                      </div>
+                    ) : (
+                      <NetworkBadge network={card.network} />
+                    )}
+                    <div>
+                      <h3 className="text-[16px] font-bold text-ink">{card.name}</h3>
+                      <p className="text-sm text-muted">
+                        {card.network} · crédito
+                      </p>
                     </div>
-                  ) : (
-                    <NetworkBadge network={card.network} />
-                  )}
-                  <div>
-                    <h3 className="text-[16px] font-bold text-ink">{card.name}</h3>
-                    <p className="text-sm text-muted">
-                      {card.network} · crédito
-                    </p>
                   </div>
+                  {card.preaprobada ? <Pill tone="navy">Preaprobada</Pill> : null}
                 </div>
 
                 {card.matchNote ? (
@@ -129,7 +132,7 @@ export function RecommendationsTabs({
                     Ver detalles
                   </button>
                   <button className="flex-1 rounded-full border border-divider py-3 text-[15px] font-bold text-ink">
-                    Comparar
+                    Aplicar
                   </button>
                 </div>
               </Card>

@@ -140,6 +140,7 @@ export const getCards = cache(async (): Promise<PopularCard[]> => {
     annualCost: c.annual_cost,
     minIncome: c.min_income,
     redemption: c.redemption,
+    preaprobada: c.preaprobada ?? false,
     perks: c.perks ?? [],
     imagePath: c.image_path,
     matchCategoryIds: c.match_category_ids ?? [],

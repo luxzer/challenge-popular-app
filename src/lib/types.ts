@@ -74,6 +74,7 @@ export type PopularCard = {
   annualCost: string;
   minIncome: string;
   redemption: string;
+  preaprobada: boolean;
   cashback: CashbackItem[];
   perks?: string[];
   imagePath: string | null;
